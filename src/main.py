@@ -3,7 +3,7 @@
 
 # Constants
 RESOLUTION = (1920, 1080)
-ALPHA = "ABCEDFGIJKLMNOPQRSTUVWXYZ124567890"
+ALPHA = "ABCEDFGIJKLMNOPQRSTUVWXYZ124567890Backspace"
 COMBOS = ("ABCDefgh12345678", "zombroomshutdown")
 
 # Imports
@@ -11,9 +11,9 @@ from sys import argv
 from threading import Thread
 from time import sleep
 
-from PySide6.QtCore import Qt, QObject, QEvent
-from PySide6.QtGui import QPixmap, QCloseEvent, QKeyEvent, QMouseEvent, QFocusEvent
-from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QLineEdit, QLabel
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
 
 # Build Window
 class Application(QApplication):
@@ -21,9 +21,11 @@ class Application(QApplication):
         super().__init__(argv)
         # Set information
         self.setApplicationDisplayName("Virus Game")
-        # Start window
-        self.main_window = MainWindow()    
-        self.main_window.show()
+        # Load appearance
+        QFontDatabase.addApplicationFont("../font/DIGITALDREAMSKEWNARROW.ttf")
+        print(QFontDatabase.applicationFontFamilies(0))
+        with open("main.qss","r") as qss:
+            self.setStyleSheet(qss.read())
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -31,20 +33,24 @@ class MainWindow(QMainWindow):
         # Set information
         self.setWindowTitle("Virus Game")
         self.setCursor(Qt.BlankCursor)
+        self.setWindowFlags(Qt.FramelessWindowHint)
         # Set central widget
         self.main_widget = MainWidget(self)
-        qApp.installEventFilter(self.main_widget)
+        app.installEventFilter(self.main_widget)
         self.setCentralWidget(self.main_widget)
         # Set layout
         self.main_layout = QVBoxLayout()
         self.main_widget.setLayout(self.main_layout)
         # Build title layer
+        # Build combo layer
+        self.combo_layout = QHBoxLayout()
+        self.main_layout.addLayout(self.combo_layout)
         for _ in range(0,4):
-            self.main_layout.addWidget(ComboBox(self))
-        self.main_layout.itemAt(0).widget().setFocus()
+            self.combo_layout.addWidget(ComboBox(self))
+        self.combo_layout.itemAt(0).widget().setFocus()
         # Build timer layer
         self.timer = 120
-        self.timer_label = QLabel()
+        self.timer_label = TimerLabel()
         self.timer_label.setText(str(self.timer))
         self.main_layout.addWidget(self.timer_label)
     
@@ -70,12 +76,14 @@ class MainWidget(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
+
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == event.KeyPress:
             if event.key() == Qt.Key_End and event.modifiers() & Qt.ShiftModifier:
                 self.main_window.timer = 0
                 app.exit(0)
         return super().eventFilter(watched, event)
+
 class ComboBox(QLineEdit):
     CHARS = 4
     combo_boxes = []
@@ -88,9 +96,13 @@ class ComboBox(QLineEdit):
         # Set information
         self.main_window = main_window
         self.setCursor(Qt.BlankCursor)
-        self.setInputMask("N"*ComboBox.CHARS)
+        self.setMaxLength(4)
         self.setFocusPolicy(Qt.NoFocus)
         self.textChanged.connect(self.combo_changed)
+        # Set display
+        self.setFrame(False)
+        self.setAlignment(Qt.AlignCenter)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     def combo_changed(combo_box, text):
         # Check if limit reached, move forward
@@ -119,6 +131,11 @@ class ComboBox(QLineEdit):
                 if previous_box.isEnabled():
                     previous_box.setFocus()
 
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if QKeySequence(event.keyCombination()).toString() in ALPHA:
+            return super().keyPressEvent(event)
+        event.ignore()
+
     def focusInEvent(self, event: QFocusEvent) -> None:
         self.setText("")
         self.setCursorPosition(0)
@@ -130,10 +147,16 @@ class ComboBox(QLineEdit):
     def mouseMoveEvent(self, event:QMouseEvent) -> None:
         event.ignore()
         
+class TimerLabel(QLabel):
+    def __init__(self):
+        super().__init__()
+        self.setAlignment(Qt.AlignCenter)
 
 def main():
     global app
     app = Application(argv)
+    main_window = MainWindow()    
+    main_window.showFullScreen()
     app.exec()
 
 # Execute

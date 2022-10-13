@@ -1,0 +1,22 @@
+* {
+    /* Fonts */
+    font-family: 'Digital dream Skew Narrow', monospace;
+}
+MainWindow{
+    background-image: url("../img/Virus-Game-Background.jpg");
+}
+ComboBox{
+    /* Coloring */
+    color:red;
+    background-color: black;
+    border: none;
+    /* Sizing */
+    width: 600px;
+    height: 100px;
+    /* Fonts */
+    font-size: 100px;
+}
+TimerLabel{
+    color:red;
+    font-size: 350px;
+}

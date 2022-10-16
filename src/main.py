@@ -4,7 +4,13 @@
 # Constants
 RESOLUTION = (1920, 1080)
 ALPHA = "ABCEDFGHIJKLMNOPQRSTUVWXYZ124567890Backspace"
-COMBOS = ("ABCDefgh12345678", "zombroomshutdown")
+try:
+    with open("../config", "r") as file:
+        COMBO = file.read()
+except Exception as e:
+    print(f"Could not open file for {e}")
+    COMBO = "ABCDefgh12345678"
+COMBOS = (COMBO, "zombroomshutdown")
 
 # Imports
 from sys import argv
@@ -43,7 +49,7 @@ class MainWindow(QMainWindow):
         self.main_widget.setLayout(self.main_layout)
         # Build title layer
         self.title = Title()
-        self.title.setText("Self Destruct\nControl Panel")
+        self.title.setText("Decontamination\nSTAGE 1")
         self.main_layout.addWidget(self.title)
         # Build combo layer
         self.combo_layout = QHBoxLayout()
@@ -55,7 +61,7 @@ class MainWindow(QMainWindow):
         # Build timer layer
         self.timer = 120
         self.timer_label = TimerLabel()
-        self.timer_label.setText("2:00")
+        self.timer_label.setText("")
         self.main_layout.addWidget(self.timer_label)
     
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -64,13 +70,33 @@ class MainWindow(QMainWindow):
     # Timer countdown thread
     def countdown_timer_tick(self):
         while self.timer > 0:
-            timer_text = f"{int((self.timer/60))}:{self.timer % 60}"
-            self.timer_label.setText(timer_text)
+            self.timer_label.setText(f"{int((self.timer/60))}:{self.timer%60:02}")
             self.timer -= 1
             sleep(1)
 
-    def combo_changed(index):
-        pass
+    def combo_changed(self, index):
+        combo = "".join([box.text() for box in ComboBox.combo_boxes])
+        match index:
+            case 0:
+                self.title.setText("Decontamination\nSTAGE 2")
+                self.title.setStyleSheet("color:yellow !important;")
+                ComboBox.combo_boxes[1].setStyleSheet("color:yellow !important;")
+                print(ComboBox.combo_boxes[0].styleSheet())
+            case 1:
+                self.title.setText("Decontamination\nSTAGE 3")
+                self.title.setStyleSheet("color:orange !important;")
+                ComboBox.combo_boxes[2].setStyleSheet("color:orange !important;")
+            case 2:
+                self.title.setText("DECONTAMINATION FAILED\nSELF DESTRUCT")
+                self.title.setStyleSheet("color:red !important; font-size: 100px !important;")
+                ComboBox.combo_boxes[3].setStyleSheet("color:red !important")
+            case 3:
+                if combo == COMBOS[0]:
+                    self.countdown()
+                else:
+                    app.exit(0)
+            case _:
+                pass
 
     # Called on proper code entry
     def countdown(self):
@@ -120,7 +146,7 @@ class ComboBox(QLineEdit):
     def keyPressEvent(self, event: QKeyEvent) -> None:
         #if QKeySequence(event.keyCombination()).toString() in ALPHA:
          # Attemp to move focus
-        if event.key() & Qt.Key_Enter:
+        if event.key() == Qt.Key_Return:
             # Check if limit reached, move forward
             if len(self.text()) == ComboBox.CHARS:
                 # Check code is correct
@@ -132,12 +158,7 @@ class ComboBox(QLineEdit):
                             ComboBox.combo_boxes[self.index+1].setVisible(True)
                             ComboBox.combo_boxes[self.index+1].setFocus()
                             ComboBox.combo_boxes[self.index].setVisible(False)
-                    # Check total code
-                    combo = "".join([box.text() for box in ComboBox.combo_boxes])
-                    self.main_window.combo_changed(self.index)
-                    # Kill sequence
-                    if combo == COMBOS[1]:
-                        app.exit(0)
+                        self.main_window.combo_changed(self.index)
         return super().keyPressEvent(event)
         #event.ignore()
 

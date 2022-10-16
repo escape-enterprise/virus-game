@@ -2,8 +2,7 @@ MainWindow{
     border-image: url("../img/Virus-Game-Fiber-BG.jpg");
 }
 * {
-    color:#66ff00;
-    background-color:#0000;
+    color:greenyellow;
     font-family:"Courier";
 }
 Title{
@@ -13,12 +12,12 @@ Title{
 ComboBox{
     /* Coloring */
     background-color: black;
-    border: 2px groove #66ff00;
+    border: 2px groove white;
     /* Sizing */
-    width: 300px;
-    height: 125px;
+    width: 350px;
+    height: 150px;
     /* Fonts */
-    font-size: 100px;
+    font-size: 120px;
 }
 TimerLabel{
     color:red;

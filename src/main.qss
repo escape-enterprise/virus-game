@@ -1,18 +1,22 @@
-* {
-    /* Fonts */
-    font-family: 'Digital dream Skew Narrow', monospace;
-}
 MainWindow{
-    background-image: url("../img/Virus-Game-Background.jpg");
+    border-image: url("../img/Virus-Game-Fiber-BG.jpg");
+}
+* {
+    color:#66ff00;
+    background-color:#0000;
+    font-family:"Courier";
+}
+Title{
+    /* Sizing */
+    font-size: 150px;
 }
 ComboBox{
     /* Coloring */
-    color:red;
     background-color: black;
-    border: none;
+    border: 2px groove #66ff00;
     /* Sizing */
-    width: 600px;
-    height: 100px;
+    width: 300px;
+    height: 125px;
     /* Fonts */
     font-size: 100px;
 }

@@ -3,7 +3,7 @@
 
 # Constants
 RESOLUTION = (1920, 1080)
-ALPHA = "ABCEDFGIJKLMNOPQRSTUVWXYZ124567890Backspace"
+ALPHA = "ABCEDFGHIJKLMNOPQRSTUVWXYZ124567890Backspace"
 COMBOS = ("ABCDefgh12345678", "zombroomshutdown")
 
 # Imports
@@ -22,7 +22,7 @@ class Application(QApplication):
         # Set information
         self.setApplicationDisplayName("Virus Game")
         # Load appearance
-        QFontDatabase.addApplicationFont("../font/DIGITALDREAMSKEWNARROW.ttf")
+        #QFontDatabase.addApplicationFont("../font/DIGITALDREAMSKEWNARROW.ttf")
         print(QFontDatabase.applicationFontFamilies(0))
         with open("main.qss","r") as qss:
             self.setStyleSheet(qss.read())
@@ -42,16 +42,20 @@ class MainWindow(QMainWindow):
         self.main_layout = QVBoxLayout()
         self.main_widget.setLayout(self.main_layout)
         # Build title layer
+        self.title = Title()
+        self.title.setText("Self Destruct\nControl Panel")
+        self.main_layout.addWidget(self.title)
         # Build combo layer
         self.combo_layout = QHBoxLayout()
         self.main_layout.addLayout(self.combo_layout)
         for _ in range(0,4):
             self.combo_layout.addWidget(ComboBox(self))
+        self.combo_layout.itemAt(0).widget().setVisible(True)
         self.combo_layout.itemAt(0).widget().setFocus()
         # Build timer layer
         self.timer = 120
         self.timer_label = TimerLabel()
-        self.timer_label.setText(str(self.timer))
+        self.timer_label.setText("2:00")
         self.main_layout.addWidget(self.timer_label)
     
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -60,9 +64,13 @@ class MainWindow(QMainWindow):
     # Timer countdown thread
     def countdown_timer_tick(self):
         while self.timer > 0:
+            timer_text = f"{int((self.timer/60))}:{self.timer % 60}"
+            self.timer_label.setText(timer_text)
             self.timer -= 1
-            self.timer_label.setText(str(self.timer))
             sleep(1)
+
+    def combo_changed(index):
+        pass
 
     # Called on proper code entry
     def countdown(self):
@@ -84,6 +92,11 @@ class MainWidget(QWidget):
                 app.exit(0)
         return super().eventFilter(watched, event)
 
+class Title(QLabel):
+    def __init__(self):
+        super().__init__()
+        self.setAlignment(Qt.AlignCenter)
+
 class ComboBox(QLineEdit):
     CHARS = 4
     combo_boxes = []
@@ -93,48 +106,40 @@ class ComboBox(QLineEdit):
         # Set identity
         self.index = len(ComboBox.combo_boxes)
         ComboBox.combo_boxes.append(self)
+        self.setVisible(False)
         # Set information
         self.main_window = main_window
         self.setCursor(Qt.BlankCursor)
         self.setMaxLength(4)
         self.setFocusPolicy(Qt.NoFocus)
-        self.textChanged.connect(self.combo_changed)
         # Set display
         self.setFrame(False)
         self.setAlignment(Qt.AlignCenter)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
-    def combo_changed(combo_box, text):
-        # Check if limit reached, move forward
-        if len(combo_box.text()) == ComboBox.CHARS:
-            # Check code is correct
-            for COMBO in COMBOS:
-                i, c = combo_box.index, ComboBox.CHARS
-                if combo_box.text() == COMBO[i*c:i*c+c]:
-                    combo_box.setEnabled(False)
-                    # Attemp to move focus
-                    if combo_box.index < len(ComboBox.combo_boxes) - 1:
-                        ComboBox.combo_boxes[combo_box.index+1].setFocus()
-            # Check total code
-            combo = "".join([box.text() for box in ComboBox.combo_boxes])
-            # Win sequence
-            if combo == COMBOS[0]:
-                combo_box.main_window.countdown()
-            # Kill sequence
-            if combo == COMBOS[1]:
-                app.exit(0)
-
-        # Move backwards
-        if len(combo_box.text()) == 0:
-            if combo_box.index > 0:
-                previous_box = ComboBox.combo_boxes[combo_box.index+0]
-                if previous_box.isEnabled():
-                    previous_box.setFocus()
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if QKeySequence(event.keyCombination()).toString() in ALPHA:
-            return super().keyPressEvent(event)
-        event.ignore()
+        #if QKeySequence(event.keyCombination()).toString() in ALPHA:
+         # Attemp to move focus
+        if event.key() & Qt.Key_Enter:
+            # Check if limit reached, move forward
+            if len(self.text()) == ComboBox.CHARS:
+                # Check code is correct
+                for COMBO in COMBOS:
+                    i, c = self.index, ComboBox.CHARS
+                    if self.text() == COMBO[i*c:i*c+c]:
+                        self.setEnabled(False)
+                        if self.index < len(ComboBox.combo_boxes) - 1:
+                            ComboBox.combo_boxes[self.index+1].setVisible(True)
+                            ComboBox.combo_boxes[self.index+1].setFocus()
+                            ComboBox.combo_boxes[self.index].setVisible(False)
+                    # Check total code
+                    combo = "".join([box.text() for box in ComboBox.combo_boxes])
+                    self.main_window.combo_changed(self.index)
+                    # Kill sequence
+                    if combo == COMBOS[1]:
+                        app.exit(0)
+        return super().keyPressEvent(event)
+        #event.ignore()
 
     def focusInEvent(self, event: QFocusEvent) -> None:
         self.setText("")
@@ -157,6 +162,7 @@ def main():
     app = Application(argv)
     main_window = MainWindow()    
     main_window.showFullScreen()
+    #main_window.show()
     app.exec()
 
 # Execute
